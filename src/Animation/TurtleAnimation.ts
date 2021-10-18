@@ -1,5 +1,5 @@
 export const loadTurtleAnimation = (scene: Phaser.Scene) => {
-    
+
     // Turtle Walking
     scene.anims.create({
         key: 'turtleWalking',
@@ -40,6 +40,21 @@ export const loadTurtleAnimation = (scene: Phaser.Scene) => {
         {
             key: 'enemies',
             frame: 'RedTurtle2'
+        }],
+        frameRate: 6,
+        repeat: -1
+    });
+
+    // Blue Turtle Shell
+    scene.anims.create({
+        key: 'TurtleShell1',
+        frames: [{
+            key: 'enemies',
+            frame: 'TurtleShell1'
+        },
+        {
+            key: 'enemies',
+            frame: 'TurtleShell2'
         }],
         frameRate: 6,
         repeat: -1

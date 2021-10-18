@@ -1,4 +1,4 @@
-import { Flag } from "../Objects/Flag.js";
+import { Coins } from "../Objects/Coins.js";
 import { Flowers } from "../Objects/Flowers.js";
 import { Koopas } from "../Objects/Koopas.js";
 import { LifeMushrooms } from "../Objects/LifeMushrooms.js";
@@ -7,11 +7,12 @@ import { Player } from "../Objects/Player.js";
 import { Stars } from "../Objects/Stars.js";
 import { Turtles } from "../Objects/Turtles.js";
 import { GameLogic } from "../Utils/GameLogic.js";
-export class World11 extends Phaser.Scene {
+export class World12 extends Phaser.Scene {
     constructor() {
-        super('world11');
-        console.log("world11");
+        super('world12');
+        console.log("world12");
         this.playerCollisions = [];
+        this.tenCoinsBrick = 0;
     }
     preload() {
         this.themeSound = this.sound.add('LEVEL1THEMESONG', { loop: true, volume: 0.5 });
@@ -31,87 +32,110 @@ export class World11 extends Phaser.Scene {
         this.gameLogic = new GameLogic(this);
         this.input.keyboard.enabled = true;
         // Render Map
-        this.map = this.make.tilemap({ key: "map1" });
+        this.map = this.make.tilemap({ key: "map2" });
         this.tileset = this.map.addTilesetImage("tileset", "tiles");
         const backgroundLayer = this.map.createLayer("Background", this.tileset, 0, 0);
         this.coinBricksLayer = this.map.createLayer("CoinBricks", this.tileset, 0, 0);
         this.collisionLayer = this.map.createLayer("CollisionLayer", this.tileset, 0, 0);
-        this.coinBricksLayer.setCollision([23]);
-        this.collisionLayer.setCollision([1, 3, 20, 98, 99, 100, 145, 146, 396, 414, 415]);
-        this.physics.world.setBoundsCollision(true, true, false, false);
+        this.collisionLayer.setCollision([2, 67, 107, 192, 193, 239, 240, 288, 335, 289, 336, 290, 239, 255]);
+        this.coinBricksLayer.setCollision([70, 71]);
+        backgroundLayer.setCollision([107, 2, 4]);
         // Create Player
         const spawnPoint = this.map.findObject("Player", obj => obj.name === "Spawn position");
         this.player = new Player(this, spawnPoint.x, spawnPoint.y - 50, 'mario');
         this.player.setPlayerView();
+        this.physics.world.setBoundsCollision(true, true, false, false);
         // invincible
-        this.player.setMarioSize('small');
+        this.player.setMarioSize('fire');
         this.player.chooseAnimation('walk');
         this.player.setLives(2);
         let playerBullets = this.player.getPlayerBullets();
         this.gameLogic.setInitGame(0, 0);
-        this.gameLogic.addText('1-1', 500, this.player.getLives());
+        this.gameLogic.addText('1-2', 500, this.player.getLives());
         // Set Up Camera
         this.cameras.main.startFollow(this.player);
         this.cameras.main.setBounds(0, 0, this.map.widthInPixels, 0);
-        this.cameras.main.setBackgroundColor('#6b8cff');
+        this.cameras.main.setBackgroundColor('#000000');
         // Add Mushrooms + LifeMushrooms + Stars
         this.mushrooms = new Mushrooms(this, this.map);
         this.lifeMushrooms = new LifeMushrooms(this, this.map);
         this.stars = new Stars(this, this.map);
         this.flowers = new Flowers(this, this.map);
-        // Add Koopas
+        this.coins = new Coins(this, this.map);
+        // Add Koopas & Turtles
         this.koopas = new Koopas(this, this.map);
         this.turtles = new Turtles(this, this.map);
         this.themeSound.play();
+        // Exit Position
+        const exit1Position = this.map.findObject("Player", obj => obj.name === "exit1");
+        let exit1 = this.physics.add.sprite(exit1Position.x + 46, exit1Position.y, null);
+        exit1.setImmovable(true);
+        exit1.setSize(97, 57);
+        exit1.body.allowGravity = false;
+        let smallExitChecker = this.physics.add.sprite(exit1Position.x + 80, exit1Position.y, null);
+        smallExitChecker.setImmovable(true);
+        smallExitChecker.setSize(5, 57);
+        smallExitChecker.body.allowGravity = false;
+        const exit2Position = this.map.findObject("Player", obj => obj.name === "exit2");
+        let exit2 = this.physics.add.sprite(exit2Position.x + 30, exit2Position.y + 26, null);
+        exit2.setImmovable(true);
+        exit2.setSize(57, 50);
+        exit2.body.allowGravity = false;
         // Add Collisions
         // Player & Objects
-        this.physics.add.collider(this.player, this.collisionLayer);
-        this.playerCollisions[0] = this.physics.add.collider(this.player, [this.collisionLayer, this.coinBricksLayer], null, this.brickCollision, this);
+        this.playerCollisions[0] = this.physics.add.collider(this.player, this.collisionLayer, this.brickCollision, null, this);
         this.playerCollisions[1] = this.physics.add.collider(this.player, this.koopas.getGroup(), this.koopasColliderHandler, null, this);
         this.playerCollisions[2] = this.physics.add.collider(this.player, this.turtles.getGroup(), this.turtlesColliderHandler, null, this);
-        // Mushrooms & Layer
-        this.physics.add.collider(this.mushrooms.getGroup(), this.collisionLayer);
-        this.physics.add.collider(this.mushrooms.getGroup(), this.coinBricksLayer);
-        this.playerCollisions[3] = this.physics.add.overlap(this.player, this.mushrooms.getGroup(), this.moveMushroom, null, this);
-        // Life Mushrooms & Layer
-        this.physics.add.collider(this.lifeMushrooms.getGroup(), this.collisionLayer);
-        this.physics.add.collider(this.lifeMushrooms.getGroup(), this.coinBricksLayer);
-        this.playerCollisions[4] = this.physics.add.overlap(this.player, this.lifeMushrooms.getGroup(), this.moveMushroom, null, this);
+        this.playerCollisions[3] = this.physics.add.collider(this.player, backgroundLayer);
+        this.playerCollisions[4] = this.physics.add.overlap(this.player, this.mushrooms.getGroup(), this.moveMushroom, null, this);
+        this.playerCollisions[5] = this.physics.add.overlap(this.player, this.lifeMushrooms.getGroup(), this.moveMushroom, null, this);
+        this.playerCollisions[6] = this.physics.add.overlap(this.player, this.stars.getGroup(), this.moveStar, null, this);
+        this.playerCollisions[7] = this.physics.add.overlap(this.player, this.flowers.getGroup(), this.fireFlowerHandler, null, this);
+        this.playerCollisions[8] = this.physics.add.overlap(this.player, this.coins.getGroup(), this.coinsHandler, null, this);
+        this.physics.add.collider(this.player, this.coinBricksLayer, function () {
+            if (this.player.body.blocked.up || this.player.body.touching.up)
+                this.bumpSound.play();
+        }, null, this);
+        // Koopas & Objects
         this.physics.add.collider(this.koopas.getGroup(), this.collisionLayer);
         this.physics.add.collider(this.koopas.getGroup(), this.koopas.getGroup());
+        this.physics.add.collider(this.koopas.getGroup(), this.coinBricksLayer);
+        this.physics.add.collider(this.koopas.getGroup(), backgroundLayer);
+        // Turtles & Objects
         this.physics.add.collider(this.turtles.getGroup(), this.collisionLayer);
+        this.physics.add.collider(this.turtles.getGroup(), this.turtles.getGroup(), this.collisionBetweenEnemiesHandler, null, this);
         this.physics.add.collider(this.turtles.getGroup(), this.koopas.getGroup(), this.collisionBetweenEnemiesHandler, null, this);
+        this.physics.add.collider(this.turtles.getGroup(), backgroundLayer);
+        // Mushrom & Objects
+        this.physics.add.collider(this.mushrooms.getGroup(), this.collisionLayer);
+        this.physics.add.collider(this.mushrooms.getGroup(), this.coinBricksLayer);
+        this.physics.add.collider(this.mushrooms.getGroup(), backgroundLayer);
+        // Life Mushrom & Objects
+        this.physics.add.collider(this.lifeMushrooms.getGroup(), this.collisionLayer);
+        this.physics.add.collider(this.lifeMushrooms.getGroup(), this.coinBricksLayer);
+        this.physics.add.collider(this.lifeMushrooms.getGroup(), backgroundLayer);
+        // Stars & Objects
+        this.physics.add.collider(this.stars.getGroup(), this.collisionLayer);
+        this.physics.add.collider(this.stars.getGroup(), this.coinBricksLayer);
+        this.physics.add.collider(this.stars.getGroup(), backgroundLayer);
+        // Flower & Objects
+        this.physics.add.collider(this.flowers.getGroup(), this.collisionLayer);
+        this.physics.add.collider(this.flowers.getGroup(), this.coinBricksLayer);
         // Bullets & Objects
         this.physics.add.collider(playerBullets, this.collisionLayer, this.bulletExplosion, null, this);
         this.physics.add.collider(playerBullets, this.coinBricksLayer, this.bulletExplosion, null, this);
         this.physics.add.collider(playerBullets, this.koopas.getGroup(), this.bulletExplosion, null, this);
         this.physics.add.collider(playerBullets, this.turtles.getGroup(), this.bulletExplosion, null, this);
-        // Stars & Objects
-        this.physics.add.collider(this.stars.getGroup(), this.collisionLayer);
-        this.playerCollisions[5] = this.physics.add.overlap(this.player, this.stars.getGroup(), this.moveStar, null, this);
-        // Flowers & Objects
-        this.physics.add.collider(this.flowers.getGroup(), this.collisionLayer);
-        this.playerCollisions[6] = this.physics.add.overlap(this.player, this.flowers.getGroup(), this.fireFlowerHandler, null, this);
-        // Coin Bricks Layer & Objects
-        this.physics.add.collider(this.coinBricksLayer, this.mushrooms.getGroup());
-        this.physics.add.collider(this.coinBricksLayer, this.koopas.getGroup());
-        this.physics.add.collider(this.coinBricksLayer, this.stars.getGroup());
-        this.physics.add.collider(this.coinBricksLayer, this.flowers.getGroup());
-        this.playerCollisions[7] = this.physics.add.collider(this.player, this.coinBricksLayer, function () {
-            if (this.player.body.blocked.up || this.player.body.touching.up)
-                this.bumpSound.play();
-        }, null, this);
-        // Add Flag
-        const flagPosition = this.map.findObject("Player", obj => obj.name === "Flag");
-        this.flag = new Flag(this, flagPosition.x - 21, flagPosition.y + 10, "flag");
-        var flagPole = this.physics.add.sprite(flagPosition.x, flagPosition.y + 152, null)
-            .setSize(5, 326);
-        flagPole.setImmovable(true)
-            .setVisible(false);
-        flagPole.body.allowGravity = false;
-        this.playerCollisions[8] = this.physics.add.collider(this.player, flagPole, function () {
-            this.gameLogic.levelEndingAnimations(8580);
-        }, null, this);
+        this.physics.add.collider(playerBullets, backgroundLayer, this.bulletExplosion, null, this);
+    }
+    // Coin
+    coinsHandler(player, coin) {
+        coin.destroy(true);
+        this.gameLogic.coins++;
+        this.gameLogic.points += 200;
+        this.gameLogic.pointsText.setText('MARIO\n' + this.gameLogic.points);
+        this.gameLogic.coinsNumber.setText("x  " + this.gameLogic.coins);
+        this.coinSound.play();
     }
     // Bullets
     bulletExplosion(bullet, object) {
@@ -232,6 +256,45 @@ export class World11 extends Phaser.Scene {
         this.gameLogic.points += 1000;
         this.gameLogic.pointsText.setText('MARIO\n' + this.gameLogic.points);
         this.powerupSound.play();
+    }
+    // Koopas
+    koopasColliderHandler(player, koopa) {
+        if ((player.body.touching.down || player.body.blocked.down) && (koopa.body.touching.up || koopa.body.blocked.up)) {
+            koopa.setSize(0, 0);
+            koopa.setOffset(0, 25);
+            if (koopa.anims.getCurrentKey == "koopaWalking")
+                koopa.setTexture("enemies", "Koopa3");
+            else if (koopa.anims.getCurrentKey == "blueKoopaWalking")
+                koopa.setTexture("enemies", "KoopaBlue3");
+            this.time.delayedCall(1000, function () { koopa.destroy(); }, [], this);
+            this.player.chooseAnimation("jump");
+            player.setVelocityY(-240);
+            koopa.body.stop();
+            koopa.anims.stop();
+            this.gameLogic.points += 100;
+            this.squishSound.play();
+        }
+        else if (this.player.marioSize == 'small') {
+            this.gameLogic.playerKilled(this.player);
+        }
+        else if (this.player.marioSize == 'big' || this.player.marioSize == 'fire') {
+            const changeMarioSize = true;
+            this.time.delayedCall(1000, function () {
+                if (changeMarioSize)
+                    this.player.marioSize = 'small';
+            }, [], this);
+            if (koopa.body.touching.left || koopa.body.blocked.left)
+                koopa.setVelocityX(70);
+            else if (koopa.body.touching.right || koopa.body.blocked.right)
+                koopa.setVelocityX(-70);
+            this.warpSound.play();
+        }
+        else if (this.player.marioSize == 'invincible-small') {
+            koopa.destroy();
+            this.gameLogic.points += 100;
+            this.kickSound.play();
+        }
+        this.gameLogic.pointsText.setText('MARIO\n' + this.gameLogic.points);
     }
     // Turtles
     // State: 0 - Normal
@@ -377,63 +440,30 @@ export class World11 extends Phaser.Scene {
             this.kickSound.play();
         }
     }
-    // Koopas
-    koopasColliderHandler(player, koopa) {
-        if ((player.body.touching.down || player.body.blocked.down) && (koopa.body.touching.up || koopa.body.blocked.up)) {
-            koopa.setSize(0, 0);
-            koopa.setOffset(0, 25);
-            if (koopa.anims.getCurrentKey == "koopaWalking")
-                koopa.setTexture("enemies", "Koopa3");
-            else if (koopa.anims.getCurrentKey == "blueKoopaWalking")
-                koopa.setTexture("enemies", "KoopaBlue3");
-            this.time.delayedCall(1000, function () { koopa.destroy(); }, [], this);
-            this.player.chooseAnimation("jump");
-            player.setVelocityY(-240);
-            koopa.body.stop();
-            koopa.anims.stop();
-            this.gameLogic.points += 100;
-            this.squishSound.play();
-        }
-        else if (this.player.marioSize == 'small') {
-            this.gameLogic.playerKilled(this.player);
-        }
-        else if (this.player.marioSize == 'big' || this.player.marioSize == 'fire') {
-            const changeMarioSize = true;
-            this.time.delayedCall(1000, function () {
-                if (changeMarioSize)
-                    this.player.marioSize = 'small';
-            }, [], this);
-            if (koopa.body.touching.left || koopa.body.blocked.left)
-                koopa.setVelocityX(70);
-            else if (koopa.body.touching.right || koopa.body.blocked.right)
-                koopa.setVelocityX(-70);
-            this.warpSound.play();
-        }
-        else if (this.player.marioSize == 'invincible-small') {
-            koopa.destroy();
-            this.gameLogic.points += 100;
-            this.kickSound.play();
-        }
-        this.gameLogic.pointsText.setText('MARIO\n' + this.gameLogic.points);
-    }
     brickCollision() {
         if (this.player.body.blocked.up || this.player.body.touching.up) {
             let collisionTile = null;
             collisionTile = this.collisionLayer.getTileAtWorldXY(this.player.x, this.player.y - 40);
             if (collisionTile) {
+                console.log(collisionTile);
                 if (this.coinBricksLayer.getTileAtWorldXY(collisionTile.x * 42, collisionTile.y * 36) != null) {
-                    if (collisionTile.index == 20) {
+                    if (collisionTile.index == 67) {
                         this.gameLogic.points += 200;
                         this.gameLogic.coins++;
                         this.collisionLayer.removeTileAtWorldXY(collisionTile.x * 42, collisionTile.y * 36);
                         this.coinSound.play();
                     }
-                    else if (collisionTile.index == 414) {
+                    else if (collisionTile.index == 416) {
                         this.collisionLayer.removeTileAtWorldXY(collisionTile.x * 42, collisionTile.y * 36);
                         this.itemSound.play();
                     }
-                    else if (collisionTile.index == 415) {
-                        this.collisionLayer.removeTileAtWorldXY(collisionTile.x * 42, collisionTile.y * 36);
+                    else if (collisionTile.index == 255) {
+                        console.log(this.tenCoinsBrick);
+                        if (this.tenCoinsBrick >= 10) {
+                            this.collisionLayer.removeTileAtWorldXY(collisionTile.x * 42, collisionTile.y * 36);
+                            this.tenCoinsBrick = 0;
+                        }
+                        this.tenCoinsBrick++;
                         this.gameLogic.coins++;
                         this.gameLogic.points += 200;
                         this.coinSound.play();
@@ -441,13 +471,13 @@ export class World11 extends Phaser.Scene {
                 }
                 else if (this.collisionLayer.getTileAtWorldXY(collisionTile.x * 42, collisionTile.y * 36) != null) {
                     if (this.player.marioSize != 'small') {
-                        if (collisionTile.index == 396) {
+                        if (collisionTile.index == 107) {
                             this.gameLogic.points += 50;
                             this.collisionLayer.removeTileAtWorldXY(collisionTile.x * 42, collisionTile.y * 36);
                             this.breakSound.play();
                         }
                     }
-                    else if (collisionTile.index == 396) {
+                    else if (collisionTile.index == 107) {
                         this.bumpSound.play();
                     }
                 }
@@ -458,26 +488,7 @@ export class World11 extends Phaser.Scene {
     }
     update() {
         this.player.update();
-        this.checkGameStatus(this.gameLogic.gameStatus);
         this.koopas.update(this.player);
         this.turtles.update(this.player);
-    }
-    // Check Game Status
-    checkGameStatus(gameStatus) {
-        if (this.player.y > this.game.config.height) {
-            this.gameLogic.playerKilled(this.player);
-        }
-        if (gameStatus == 'dead') {
-            this.player.body.allowGravity = true;
-            this.physics.world.removeCollider(this.playerCollisions[0]);
-            this.physics.world.removeCollider(this.playerCollisions[1]);
-            this.physics.world.removeCollider(this.playerCollisions[2]);
-            this.physics.world.removeCollider(this.playerCollisions[3]);
-            this.physics.world.removeCollider(this.playerCollisions[4]);
-            this.physics.world.removeCollider(this.playerCollisions[5]);
-            this.physics.world.removeCollider(this.playerCollisions[6]);
-            this.physics.world.removeCollider(this.playerCollisions[7]);
-            this.physics.world.removeCollider(this.playerCollisions[8]);
-        }
     }
 }

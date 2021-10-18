@@ -2,6 +2,7 @@
 
 import { Preloader } from "./Scenes/Preloader.js"
 import { World11 } from "./Scenes/World11.js"
+import { World12 } from "./Scenes/World12.js"
 
 const config = {
     type: Phaser.AUTO,
@@ -11,10 +12,10 @@ const config = {
 		default: 'arcade',
 		arcade: {
 			gravity: { y: 830 },
-			debug: true
+			debug: false
 		}
 	},
-	scene: [ Preloader, World11 ],
+	scene: [ Preloader, World11, World12 ],
 }
 
 const game = new Phaser.Game(config)

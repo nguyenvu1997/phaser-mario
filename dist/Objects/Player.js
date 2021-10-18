@@ -15,6 +15,21 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
         this.bulletsGroup = this.bullets.getGroup();
         this.isPlayerDead = false;
     }
+    getActiveInvincible() {
+        return this.activeInvincible;
+    }
+    setActiveInvincible(isActive) {
+        this.activeInvincible = isActive;
+    }
+    getLives() {
+        return this.lives;
+    }
+    setLives(lives) {
+        this.lives = lives;
+    }
+    addLives(lives) {
+        this.lives += lives;
+    }
     getIsPlayerDead() {
         return this.isPlayerDead;
     }
@@ -142,7 +157,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.setVelocityX(-300);
                 this.setFlipX(true);
                 this.chooseAnimation("walk");
-                if (this.marioSize == 'small') {
+                if (this.marioSize == 'small' || this.marioSize == 'invincible-small') {
                     this.setSize(20, 30);
                     this.setOffset(6, 0);
                 }
@@ -155,7 +170,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 this.setVelocityX(300);
                 this.resetFlip();
                 this.chooseAnimation("walk");
-                if (this.marioSize == 'small') {
+                if (this.marioSize == 'small' || this.marioSize == 'invincible-small') {
                     this.setSize(20, 30);
                     this.setOffset(6, 0);
                 }
@@ -166,7 +181,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
             }
             else if (this.cursors.down.isDown) {
                 this.chooseAnimation("sitDown");
-                if (this.marioSize == 'small') {
+                if (this.marioSize == 'small' || this.marioSize == 'invincible-small') {
                     this.setSize(20, 30);
                     this.setOffset(6, 0);
                 }
@@ -174,12 +189,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                     this.setSize(0, 44)
                         .setOffset(3, -1);
                 }
-                console.log('down');
             }
             else {
                 this.setVelocityX(0);
                 this.chooseAnimation("frontView");
-                if (this.marioSize == 'small') {
+                if (this.marioSize == 'small' || this.marioSize == 'invincible-small') {
                     this.setSize(20, 30);
                     this.setOffset(6, 0);
                 }

@@ -41,6 +41,20 @@ export const loadTurtleAnimation = (scene) => {
         frameRate: 6,
         repeat: -1
     });
+    // Blue Turtle Shell
+    scene.anims.create({
+        key: 'TurtleShell1',
+        frames: [{
+                key: 'enemies',
+                frame: 'TurtleShell1'
+            },
+            {
+                key: 'enemies',
+                frame: 'TurtleShell2'
+            }],
+        frameRate: 6,
+        repeat: -1
+    });
     // Red Flying Turtle
     scene.anims.create({
         key: 'redFlyingTurtle',

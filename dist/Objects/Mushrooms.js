@@ -6,8 +6,9 @@ export class Mushrooms {
         const MushroomObjects = this.map.getObjectLayer('Mushrooms')['objects'];
         MushroomObjects.forEach(obj => {
             const mushroom = this.mushrooms.create(obj.x + 21, obj.y - 38, 'mushroomImg');
-            mushroom.setSize(22, 36);
-            mushroom.setOffset(10, 2);
+            mushroom.setSize(25, 34);
+            mushroom.setOffset(8, 2);
+            mushroom.setVisible(false);
         });
     }
     getGroup() {

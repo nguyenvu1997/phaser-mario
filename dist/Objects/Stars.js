@@ -6,8 +6,9 @@ export class Stars {
         const StarObjects = map.getObjectLayer('Stars')['objects'];
         StarObjects.forEach(obj => {
             const star = this.stars.create(obj.x + 21, obj.y - 38, 'starImg');
-            star.setSize(25, 36);
-            star.setOffset(8, 2);
+            star.setSize(25, 36)
+                .setOffset(8, 2);
+            star.setVisible(false);
         });
     }
     getGroup() {
