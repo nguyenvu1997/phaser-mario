@@ -1,8 +1,10 @@
 import { Coins } from "../Objects/Coins.js";
 import { Flowers } from "../Objects/Flowers.js";
+import { InvisibleWalls } from "../Objects/InvisibleWalls.js";
 import { Koopas } from "../Objects/Koopas.js";
 import { LifeMushrooms } from "../Objects/LifeMushrooms.js";
 import { Mushrooms } from "../Objects/Mushrooms.js";
+import { Platforms } from "../Objects/Platforms.js";
 import { Player } from "../Objects/Player.js";
 import { Stars } from "../Objects/Stars.js";
 import { Turtles } from "../Objects/Turtles.js";
@@ -13,6 +15,10 @@ export class World12 extends Phaser.Scene {
         console.log("world12");
         this.playerCollisions = [];
         this.tenCoinsBrick = 0;
+    }
+    init(data) {
+        this.dataScene = data;
+        console.log(data);
     }
     preload() {
         this.themeSound = this.sound.add('LEVEL1THEMESONG', { loop: true, volume: 0.5 });
@@ -45,13 +51,18 @@ export class World12 extends Phaser.Scene {
         this.player = new Player(this, spawnPoint.x, spawnPoint.y - 50, 'mario');
         this.player.setPlayerView();
         this.physics.world.setBoundsCollision(true, true, false, false);
-        // invincible
-        this.player.setMarioSize('fire');
+        // Invincible
+        this.player.setMarioSize(this.dataScene['size']);
         this.player.chooseAnimation('walk');
-        this.player.setLives(2);
+        this.player.setLives(this.dataScene['lives']);
         let playerBullets = this.player.getPlayerBullets();
         this.gameLogic.setInitGame(0, 0);
-        this.gameLogic.addText('1-2', 500, this.player.getLives());
+        this.gameLogic.addText('1-2', 500, this.dataScene['lives']);
+        // Get Data From Previos Scene
+        this.gameLogic.points = this.dataScene['points'];
+        this.gameLogic.pointsText.setText('MARIO\n' + this.gameLogic.points);
+        this.gameLogic.coins = this.dataScene['coins'];
+        this.gameLogic.coinsNumber.setText("x  " + this.gameLogic.coins);
         // Set Up Camera
         this.cameras.main.startFollow(this.player);
         this.cameras.main.setBounds(0, 0, this.map.widthInPixels, 0);
@@ -65,6 +76,8 @@ export class World12 extends Phaser.Scene {
         // Add Koopas & Turtles
         this.koopas = new Koopas(this, this.map);
         this.turtles = new Turtles(this, this.map);
+        // Add Invisible Walls
+        this.invisibleWalls = new InvisibleWalls(this, this.map);
         this.themeSound.play();
         // Exit Position
         const exit1Position = this.map.findObject("Player", obj => obj.name === "exit1");
@@ -72,16 +85,12 @@ export class World12 extends Phaser.Scene {
         exit1.setImmovable(true);
         exit1.setSize(97, 57);
         exit1.body.allowGravity = false;
-        let smallExitChecker = this.physics.add.sprite(exit1Position.x + 80, exit1Position.y, null);
-        smallExitChecker.setImmovable(true);
-        smallExitChecker.setSize(5, 57);
-        smallExitChecker.body.allowGravity = false;
-        const exit2Position = this.map.findObject("Player", obj => obj.name === "exit2");
-        let exit2 = this.physics.add.sprite(exit2Position.x + 30, exit2Position.y + 26, null);
-        exit2.setImmovable(true);
-        exit2.setSize(57, 50);
-        exit2.body.allowGravity = false;
+        exit1.setVisible(false);
+        // Add Platform
+        this.platforms = new Platforms(this, this.map);
+        //
         // Add Collisions
+        //
         // Player & Objects
         this.playerCollisions[0] = this.physics.add.collider(this.player, this.collisionLayer, this.brickCollision, null, this);
         this.playerCollisions[1] = this.physics.add.collider(this.player, this.koopas.getGroup(), this.koopasColliderHandler, null, this);
@@ -91,11 +100,13 @@ export class World12 extends Phaser.Scene {
         this.playerCollisions[5] = this.physics.add.overlap(this.player, this.lifeMushrooms.getGroup(), this.moveMushroom, null, this);
         this.playerCollisions[6] = this.physics.add.overlap(this.player, this.stars.getGroup(), this.moveStar, null, this);
         this.playerCollisions[7] = this.physics.add.overlap(this.player, this.flowers.getGroup(), this.fireFlowerHandler, null, this);
-        this.playerCollisions[8] = this.physics.add.overlap(this.player, this.coins.getGroup(), this.coinsHandler, null, this);
+        this.playerCollisions[8] = this.physics.add.collider(this.player, this.platforms.getGroup(), this.platformsHandler, null, this);
+        this.playerCollisions[9] = this.physics.add.overlap(this.player, this.coins.getGroup(), this.coinsHandler, null, this);
         this.physics.add.collider(this.player, this.coinBricksLayer, function () {
             if (this.player.body.blocked.up || this.player.body.touching.up)
                 this.bumpSound.play();
         }, null, this);
+        this.physics.add.overlap(this.player, exit1, this.horizontalGatesEntry, null, this);
         // Koopas & Objects
         this.physics.add.collider(this.koopas.getGroup(), this.collisionLayer);
         this.physics.add.collider(this.koopas.getGroup(), this.koopas.getGroup());
@@ -106,6 +117,7 @@ export class World12 extends Phaser.Scene {
         this.physics.add.collider(this.turtles.getGroup(), this.turtles.getGroup(), this.collisionBetweenEnemiesHandler, null, this);
         this.physics.add.collider(this.turtles.getGroup(), this.koopas.getGroup(), this.collisionBetweenEnemiesHandler, null, this);
         this.physics.add.collider(this.turtles.getGroup(), backgroundLayer);
+        this.physics.add.overlap(this.turtles.getGroup(), this.invisibleWalls.getGroup(), this.invisibleWallsHandler, null, this);
         // Mushrom & Objects
         this.physics.add.collider(this.mushrooms.getGroup(), this.collisionLayer);
         this.physics.add.collider(this.mushrooms.getGroup(), this.coinBricksLayer);
@@ -127,6 +139,56 @@ export class World12 extends Phaser.Scene {
         this.physics.add.collider(playerBullets, this.koopas.getGroup(), this.bulletExplosion, null, this);
         this.physics.add.collider(playerBullets, this.turtles.getGroup(), this.bulletExplosion, null, this);
         this.physics.add.collider(playerBullets, backgroundLayer, this.bulletExplosion, null, this);
+    }
+    // Gate Entry
+    horizontalGatesEntry(player, exit) {
+        player.x++;
+        this.input.keyboard.enabled = false;
+        setTimeout(() => {
+        }, 2000);
+        this.gameLogic.goToNextScene(this, {
+            points: this.gameLogic.points,
+            size: this.player.marioSize,
+            coins: this.gameLogic.coins,
+            lives: this.player.getLives()
+        });
+    }
+    // Invisible Walls
+    invisibleWallsHandler(turtle) {
+        if (turtle.state == 0) {
+            if (turtle.body.velocity.x < 0)
+                turtle.setVelocityX(70);
+            else if (turtle.body.velocity.x > 0)
+                turtle.setVelocityX(-70);
+        }
+        else if (turtle.state == 3) {
+            if (turtle.body.velocity.x == 0) {
+                if (turtle.body.velocity.y < 0)
+                    turtle.setVelocityY(70);
+                else if (turtle.body.velocity.y > 0)
+                    turtle.setVelocityY(-70);
+            }
+        }
+    }
+    // Platform
+    platformsHandler(player, platform) {
+        if ((player.body.touching.down || player.body.blocked.down) && (platform.body.blocked.up || platform.body.touching.up))
+            player.body.blocked.down = true;
+        platform.body.friction.x = 1;
+    }
+    platformsCycle(platforms) {
+        var array = [];
+        array = platforms.getChildren();
+        for (let i = 0; i < platforms.countActive(true); i++) {
+            if (array[i].y < 0) {
+                array[i].y = 522;
+                array[i].setVelocityY(-70);
+            }
+            else if (array[i].y > 527) {
+                array[i].y = 0;
+                array[i].setVelocityY(70);
+            }
+        }
     }
     // Coin
     coinsHandler(player, coin) {
@@ -363,9 +425,19 @@ export class World12 extends Phaser.Scene {
         else if ((this.player.marioSize == 'big' || this.player.marioSize == 'fire') && (turtle.state == 0 || turtle.state == 2 || turtle.state == 3 || turtle.state == 4)) {
             if (turtle.state == 0) {
                 if (turtle.body.touching.left || turtle.body.blocked.left) {
+                    const changeMarioSize = true;
+                    this.time.delayedCall(1000, function () {
+                        if (changeMarioSize)
+                            this.player.marioSize = 'small';
+                    }, [], this);
                     turtle.setVelocityX(70);
                 }
                 else if (turtle.body.touching.right || turtle.body.blocked.right) {
+                    const changeMarioSize = true;
+                    this.time.delayedCall(1000, function () {
+                        if (changeMarioSize)
+                            this.player.marioSize = 'small';
+                    }, [], this);
                     turtle.setVelocityX(-70);
                 }
             }
@@ -488,7 +560,27 @@ export class World12 extends Phaser.Scene {
     }
     update() {
         this.player.update();
+        this.checkGameStatus(this.gameLogic.gameStatus);
         this.koopas.update(this.player);
         this.turtles.update(this.player);
+        this.platformsCycle(this.platforms.getGroup());
+    }
+    // Check Game Status
+    checkGameStatus(gameStatus) {
+        if (this.player.y > this.game.config.height) {
+            this.gameLogic.playerKilled(this.player);
+        }
+        if (gameStatus == 'dead') {
+            this.player.body.allowGravity = true;
+            this.physics.world.removeCollider(this.playerCollisions[0]);
+            this.physics.world.removeCollider(this.playerCollisions[1]);
+            this.physics.world.removeCollider(this.playerCollisions[2]);
+            this.physics.world.removeCollider(this.playerCollisions[3]);
+            this.physics.world.removeCollider(this.playerCollisions[4]);
+            this.physics.world.removeCollider(this.playerCollisions[5]);
+            this.physics.world.removeCollider(this.playerCollisions[6]);
+            this.physics.world.removeCollider(this.playerCollisions[7]);
+            this.physics.world.removeCollider(this.playerCollisions[8]);
+        }
     }
 }

@@ -212,6 +212,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                 }
             }
         }
+        else {
+            this.cursors.up.isDown = false;
+            this.cursors.left.isDown = false;
+            this.cursors.right.isDown = false;
+        }
         // Fire
         if (Phaser.Input.Keyboard.JustDown(this.keyA)) {
             if (this.bulletsGroup.getTotalFree() > 0 && (this.marioSize == 'fire' || this.marioSize == 'invincible-fire')) {

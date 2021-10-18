@@ -41,7 +41,7 @@ export class World11 extends Phaser.Scene {
         this.physics.world.setBoundsCollision(true, true, false, false);
         // Create Player
         const spawnPoint = this.map.findObject("Player", obj => obj.name === "Spawn position");
-        this.player = new Player(this, spawnPoint.x, spawnPoint.y - 50, 'mario');
+        this.player = new Player(this, spawnPoint.x + 5000, spawnPoint.y - 50, 'mario');
         this.player.setPlayerView();
         // invincible
         this.player.setMarioSize('small');
@@ -110,7 +110,12 @@ export class World11 extends Phaser.Scene {
             .setVisible(false);
         flagPole.body.allowGravity = false;
         this.playerCollisions[8] = this.physics.add.collider(this.player, flagPole, function () {
-            this.gameLogic.levelEndingAnimations(8580);
+            this.gameLogic.levelEndingAnimations(8580, {
+                points: this.gameLogic.points,
+                size: this.player.marioSize,
+                coins: this.gameLogic.coins,
+                lives: this.player.getLives()
+            });
         }, null, this);
     }
     // Bullets
@@ -300,9 +305,19 @@ export class World11 extends Phaser.Scene {
         else if ((this.player.marioSize == 'big' || this.player.marioSize == 'fire') && (turtle.state == 0 || turtle.state == 2 || turtle.state == 3 || turtle.state == 4)) {
             if (turtle.state == 0) {
                 if (turtle.body.touching.left || turtle.body.blocked.left) {
+                    const changeMarioSize = true;
+                    this.time.delayedCall(1000, function () {
+                        if (changeMarioSize)
+                            this.player.marioSize = 'small';
+                    }, [], this);
                     turtle.setVelocityX(70);
                 }
                 else if (turtle.body.touching.right || turtle.body.blocked.right) {
+                    const changeMarioSize = true;
+                    this.time.delayedCall(1000, function () {
+                        if (changeMarioSize)
+                            this.player.marioSize = 'small';
+                    }, [], this);
                     turtle.setVelocityX(-70);
                 }
             }
@@ -409,7 +424,7 @@ export class World11 extends Phaser.Scene {
                 koopa.setVelocityX(-70);
             this.warpSound.play();
         }
-        else if (this.player.marioSize == 'invincible-small') {
+        else if (this.player.marioSize == 'invincible-small' || this.player.marioSize == 'invincible-big' || this.player.marioSize == 'invincible-fire') {
             koopa.destroy();
             this.gameLogic.points += 100;
             this.kickSound.play();

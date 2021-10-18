@@ -1,16 +1,18 @@
+import { Coins } from "../Objects/Coins.js";
 import { Flag } from "../Objects/Flag.js";
 import { Flowers } from "../Objects/Flowers.js";
+import { InvisibleWalls } from "../Objects/InvisibleWalls.js";
+import { InvisibleWalls13 } from "../Objects/InvisibleWalls13.js";
 import { Koopas } from "../Objects/Koopas.js";
-import { LifeMushrooms } from "../Objects/LifeMushrooms.js";
 import { Mushrooms } from "../Objects/Mushrooms.js";
+import { Platforms13 } from "../Objects/Platforms13.js";
 import { Player } from "../Objects/Player.js";
-import { Stars } from "../Objects/Stars.js";
 import { Turtles } from "../Objects/Turtles.js";
 import { GameLogic } from "../Utils/GameLogic.js";
 
 
 
-export class World11 extends Phaser.Scene {
+export class World13 extends Phaser.Scene {
 
     map: Phaser.Tilemaps.Tilemap;
     tileset: Phaser.Tilemaps.Tileset;
@@ -29,16 +31,18 @@ export class World11 extends Phaser.Scene {
     lifeupSound: Phaser.Sound.BaseSound;
     kickSound: Phaser.Sound.BaseSound;
     flagpoleSound: Phaser.Sound.BaseSound;
+    dieSound: Phaser.Sound.BaseSound;
 
     collisionLayer: Phaser.Tilemaps.TilemapLayer;
     coinBricksLayer: Phaser.Tilemaps.TilemapLayer;
 
     mushrooms;
-    lifeMushrooms;
-    stars;
     flowers;
     koopas;
     turtles;
+    coins;
+    platforms;
+    invisibleWalls;
 
     playerCollisions: Phaser.Physics.Arcade.Collider[];
 
@@ -46,10 +50,20 @@ export class World11 extends Phaser.Scene {
     coinsNumber: Phaser.GameObjects.Text;
     timeText: Phaser.GameObjects.Text;
 
+    tenCoinsBrick: number;
+
+    dataScene: {};
+
     constructor() {
-        super('world11')
-        console.log("world11")
+        super('world13')
+        console.log("world13")
         this.playerCollisions = [];
+        this.tenCoinsBrick = 10;
+    }
+
+    init(data: {}) {
+        this.dataScene = data
+        console.log(data)
     }
 
     preload() {
@@ -64,103 +78,94 @@ export class World11 extends Phaser.Scene {
         this.lifeupSound = this.sound.add('LIFEUP', { volume: 0.5 });
         this.kickSound = this.sound.add('KICK', { volume: 0.5 });
         this.flagpoleSound = this.sound.add('FLAGPOLE', { volume: 0.5 });
+        this.dieSound = this.sound.add('DIE', { volume: 0.5 });
     }
 
     create() {
-        // Infomation
         this.gameLogic = new GameLogic(this);
         this.input.keyboard.enabled = true;
 
         // Render Map
-        this.map = this.make.tilemap({ key: "map1" });
+        this.map = this.make.tilemap({ key: "map3" });
         this.tileset = this.map.addTilesetImage("tileset", "tiles");
         const backgroundLayer = this.map.createLayer("Background", this.tileset, 0, 0);
         this.coinBricksLayer = this.map.createLayer("CoinBricks", this.tileset, 0, 0);
         this.collisionLayer = this.map.createLayer("CollisionLayer", this.tileset, 0, 0);
-        this.coinBricksLayer.setCollision([23]);
         this.collisionLayer.setCollision([1, 3, 20, 98, 99, 100, 145, 146, 396, 414, 415]);
-        this.physics.world.setBoundsCollision(true, true, false, false);
+        this.coinBricksLayer.setCollision([23]);
+        backgroundLayer.setCollision([1, 3, 197, 198, 199]);
+
+        // Add Mushrooms + LifeMushrooms + Stars + Flowers + Coins + Platforms
+        this.mushrooms = new Mushrooms(this, this.map)
+        this.flowers = new Flowers(this, this.map)
+        this.coins = new Coins(this, this.map)
+        this.platforms = new Platforms13(this, this.map)
 
         // Create Player
         const spawnPoint = this.map.findObject("Player", obj => obj.name === "Spawn position");
-        this.player = new Player(this, spawnPoint.x + 5000, spawnPoint.y - 50, 'mario');
+        this.player = new Player(this, spawnPoint.x, spawnPoint.y - 50, 'mario');
         this.player.setPlayerView();
-        // invincible
-        this.player.setMarioSize('small');
+        this.physics.world.setBoundsCollision(true, true, false, false);
+        this.player.setMarioSize(this.dataScene['size']);
         this.player.chooseAnimation('walk');
-        this.player.setLives(2);
+        this.player.setLives(this.dataScene['lives']);
         let playerBullets = this.player.getPlayerBullets();
 
         this.gameLogic.setInitGame(0, 0);
-        this.gameLogic.addText('1-1', 500, this.player.getLives());
+        this.gameLogic.addText('1-2', 500, this.player.getLives());
+
+        // Get Data From Previos Scene
+        this.gameLogic.points = this.dataScene['points']
+        this.gameLogic.pointsText.setText('MARIO\n' + this.gameLogic.points);
+        this.gameLogic.coins = this.dataScene['coins']
+        this.gameLogic.coinsNumber.setText("x  " + this.gameLogic.coins);
 
         // Set Up Camera
         this.cameras.main.startFollow(this.player);
         this.cameras.main.setBounds(0, 0, this.map.widthInPixels, 0);
         this.cameras.main.setBackgroundColor('#6b8cff');
 
-        // Add Mushrooms + LifeMushrooms + Stars
-        this.mushrooms = new Mushrooms(this, this.map)
-        this.lifeMushrooms = new LifeMushrooms(this, this.map)
-        this.stars = new Stars(this, this.map)
-        this.flowers = new Flowers(this, this.map)
-
-        // Add Koopas
+        // Add Koopas & Turtles
         this.koopas = new Koopas(this, this.map)
         this.turtles = new Turtles(this, this.map)
 
-        this.themeSound.play();
+        let turtlesArray = [];
+        turtlesArray = this.turtles.getGroup().getChildren();
+        for (let i = 0; i < this.turtles.getGroup().countActive(true); i++) {
+            if (i == 1 || i == 3) {
+                turtlesArray[i].state = 3;
+                turtlesArray[i].setVelocityY(-1);
+                turtlesArray[i].play('redFlyingTurtle');
+                turtlesArray[i].body.allowGravity = false;
+                turtlesArray[i].body.immovable = true;
+            }
+            else {
+                turtlesArray[i].state = 0;
+                turtlesArray[i].setVelocityX(-1);
+                turtlesArray[i].play('redTurtleWalking');
+            }
 
-        // Add Collisions
+            turtlesArray[i].setBounceX(1);
+            turtlesArray[i].setSize(36, 52);
+            turtlesArray[i].setOffset(3, 0);
+        }
 
-        // Player & Objects
-        this.physics.add.collider(this.player, this.collisionLayer)
-        this.playerCollisions[0] = this.physics.add.collider(this.player, [this.collisionLayer, this.coinBricksLayer], null, this.brickCollision, this);
-        this.playerCollisions[1] = this.physics.add.collider(this.player, this.koopas.getGroup(), this.koopasColliderHandler, null, this);
-        this.playerCollisions[2] = this.physics.add.collider(this.player, this.turtles.getGroup(), this.turtlesColliderHandler, null, this);
+        // Add Invisible Walls
+        this.invisibleWalls = new InvisibleWalls13(this, this.map)
 
-        // Mushrooms & Layer
-        this.physics.add.collider(this.mushrooms.getGroup(), this.collisionLayer);
-        this.physics.add.collider(this.mushrooms.getGroup(), this.coinBricksLayer);
-        this.playerCollisions[3] = this.physics.add.overlap(this.player, this.mushrooms.getGroup(), this.moveMushroom, null, this);
+        let wallsArray = [];
+        wallsArray = this.invisibleWalls.getGroup().getChildren();
+        for (var i = 0; i < this.invisibleWalls.getGroup().countActive(true); i++) {
+            if (i == 2 || i == 3 || i == 6 || i == 7 || i == 9 || i == 10) {
+                wallsArray[i].setSize(200, 20);
+            }
+            else {
+                wallsArray[i].setSize(20, 200);
+            }
+            wallsArray[i].setVisible(false);
+        }
 
-        // Life Mushrooms & Layer
-        this.physics.add.collider(this.lifeMushrooms.getGroup(), this.collisionLayer);
-        this.physics.add.collider(this.lifeMushrooms.getGroup(), this.coinBricksLayer);
-        this.playerCollisions[4] = this.physics.add.overlap(this.player, this.lifeMushrooms.getGroup(), this.moveMushroom, null, this);
-
-        this.physics.add.collider(this.koopas.getGroup(), this.collisionLayer);
-        this.physics.add.collider(this.koopas.getGroup(), this.koopas.getGroup());
-
-        this.physics.add.collider(this.turtles.getGroup(), this.collisionLayer);
-        this.physics.add.collider(this.turtles.getGroup(), this.koopas.getGroup(), this.collisionBetweenEnemiesHandler, null, this);
-
-
-        // Bullets & Objects
-        this.physics.add.collider(playerBullets, this.collisionLayer, this.bulletExplosion, null, this);
-        this.physics.add.collider(playerBullets, this.coinBricksLayer, this.bulletExplosion, null, this);
-        this.physics.add.collider(playerBullets, this.koopas.getGroup(), this.bulletExplosion, null, this);
-        this.physics.add.collider(playerBullets, this.turtles.getGroup(), this.bulletExplosion, null, this);
-
-        // Stars & Objects
-        this.physics.add.collider(this.stars.getGroup(), this.collisionLayer);
-        this.playerCollisions[5] = this.physics.add.overlap(this.player, this.stars.getGroup(), this.moveStar, null, this);
-
-        // Flowers & Objects
-        this.physics.add.collider(this.flowers.getGroup(), this.collisionLayer);
-        this.playerCollisions[6] = this.physics.add.overlap(this.player, this.flowers.getGroup(), this.fireFlowerHandler, null, this);
-
-        // Coin Bricks Layer & Objects
-        this.physics.add.collider(this.coinBricksLayer, this.mushrooms.getGroup());
-        this.physics.add.collider(this.coinBricksLayer, this.koopas.getGroup());
-        this.physics.add.collider(this.coinBricksLayer, this.stars.getGroup());
-        this.physics.add.collider(this.coinBricksLayer, this.flowers.getGroup());
-        this.playerCollisions[7] = this.physics.add.collider(this.player, this.coinBricksLayer, function () {
-            if (this.player.body.blocked.up || this.player.body.touching.up)
-                this.bumpSound.play();
-        }, null, this);
-
-        // Add Flag
+        // Flag
         const flagPosition = this.map.findObject("Player", obj => obj.name === "Flag");
         this.flag = new Flag(this, flagPosition.x - 21, flagPosition.y + 10, "flag");
 
@@ -170,14 +175,118 @@ export class World11 extends Phaser.Scene {
             .setVisible(false);
         (flagPole.body as Phaser.Physics.Arcade.Body).allowGravity = false;
 
-        this.playerCollisions[8] = this.physics.add.collider(this.player, flagPole, function () {
-            this.gameLogic.levelEndingAnimations(8580, {
-                points: this.gameLogic.points,
-                size: this.player.marioSize,
-                coins: this.gameLogic.coins,
-                lives: this.player.getLives()
-            });
+        // 
+        // Add Collisions
+        //
+        // Player & Objects
+        this.playerCollisions[0] = this.physics.add.collider(this.player, this.collisionLayer, this.brickCollision, null, this);
+        this.playerCollisions[1] = this.physics.add.collider(this.player, this.koopas.getGroup(), this.koopasColliderHandler, null, this);
+        this.playerCollisions[2] = this.physics.add.collider(this.player, this.turtles.getGroup(), this.turtlesColliderHandler, null, this);
+        this.playerCollisions[3] = this.physics.add.collider(this.player, backgroundLayer);
+        this.playerCollisions[4] = this.physics.add.overlap(this.player, this.mushrooms.getGroup(), this.moveMushroom, null, this);
+        this.playerCollisions[7] = this.physics.add.overlap(this.player, this.flowers.getGroup(), this.fireFlowerHandler, null, this);
+        this.playerCollisions[8] = this.physics.add.collider(this.player, this.platforms.getGroup(), this.platformsHandler, null, this);
+        this.playerCollisions[9] = this.physics.add.overlap(this.player, this.coins.getGroup(), this.coinsHandler, null, this);
+
+
+
+        this.physics.add.collider(this.player, this.coinBricksLayer, function () {
+            if (this.player.body.blocked.up || this.player.body.touching.up)
+                this.bumpSound.play();
         }, null, this);
+
+
+
+        this.playerCollisions[10] = this.physics.add.collider(this.player, flagPole, function () {
+            this.gameLogic.levelEndingAnimations(6606);
+        }, null, this);
+
+        // Koopas & Objects
+        this.physics.add.collider(this.koopas.getGroup(), this.collisionLayer);
+        // this.physics.add.collider(this.koopas.getGroup(), this.koopas.getGroup());
+        this.physics.add.collider(this.koopas.getGroup(), this.coinBricksLayer);
+        this.physics.add.collider(this.koopas.getGroup(), backgroundLayer);
+
+        // Turtles & Objects
+        this.physics.add.collider(this.turtles.getGroup(), this.collisionLayer);
+        this.physics.add.collider(this.turtles.getGroup(), this.turtles.getGroup(), this.collisionBetweenEnemiesHandler, null, this);
+        this.physics.add.collider(this.turtles.getGroup(), this.koopas.getGroup(), this.collisionBetweenEnemiesHandler, null, this);
+        this.physics.add.collider(this.turtles.getGroup(), backgroundLayer);
+        this.physics.add.overlap(this.turtles.getGroup(), this.invisibleWalls.getGroup(), this.invisibleWallsHandler, null, this);
+
+        // Mushrom & Objects
+        this.physics.add.collider(this.mushrooms.getGroup(), this.collisionLayer);
+        this.physics.add.collider(this.mushrooms.getGroup(), this.coinBricksLayer);
+
+        // Flower & Objects
+        this.physics.add.collider(this.flowers.getGroup(), this.collisionLayer);
+        this.physics.add.collider(this.flowers.getGroup(), this.coinBricksLayer);
+
+        // Bullets & Objects
+        this.physics.add.collider(playerBullets, this.collisionLayer, this.bulletExplosion, null, this);
+        this.physics.add.collider(playerBullets, this.coinBricksLayer, this.bulletExplosion, null, this);
+        this.physics.add.collider(playerBullets, this.koopas.getGroup(), this.bulletExplosion, null, this);
+        this.physics.add.collider(playerBullets, this.turtles.getGroup(), this.bulletExplosion, null, this);
+        this.physics.add.collider(playerBullets, backgroundLayer, this.bulletExplosion, null, this);
+
+        // Platform & Invisible Walls
+        this.physics.add.collider(this.platforms.getGroup(), this.invisibleWalls.getGroup(), this.platformsMovement, null, this);
+
+
+        setTimeout(() => {
+            this.themeSound.play();
+        }, 2000);
+    }
+
+    // Invisible Walls
+    invisibleWallsHandler(turtle) {
+        if (turtle.state == 0) {
+            if (turtle.body.velocity.x < 0)
+                turtle.setVelocityX(70);
+            else if (turtle.body.velocity.x > 0)
+                turtle.setVelocityX(-70);
+        }
+        else if (turtle.state == 3) {
+            console.log(turtle.body.velocity.x)
+            if (turtle.body.velocity.x == -1) {
+                if (turtle.body.velocity.y < 0)
+                    turtle.setVelocityY(70);
+                else if (turtle.body.velocity.y > 0)
+                    turtle.setVelocityY(-70);
+            }
+        }
+    }
+
+    // Coin
+    coinsHandler(player: Player, coin) {
+        coin.destroy(true);
+        this.gameLogic.coins++;
+        this.gameLogic.points += 200;
+        this.gameLogic.pointsText.setText('MARIO\n' + this.gameLogic.points);
+        this.gameLogic.coinsNumber.setText("x  " + this.gameLogic.coins);
+        this.coinSound.play();
+    }
+
+    // Platform
+    platformsHandler(player: Player, platform) {
+        if ((player.body.touching.down || player.body.blocked.down) && (platform.body.blocked.up || platform.body.touching.up))
+            player.body.blocked.down = true;
+        platform.body.friction.x = 1;
+    }
+
+    platformsMovement(platform, wall) {
+        if ((platform.body.blocked.up || platform.body.touching.up) && (wall.body.blocked.down || wall.body.touching.down)) {
+            platform.body.velocity.y = 70;
+        }
+        else if ((platform.body.blocked.down || platform.body.touching.down) && (wall.body.blocked.up || wall.body.touching.up)) {
+            platform.body.velocity.y = -70;
+        }
+        else if ((platform.body.blocked.left || platform.body.touching.left) && (wall.body.blocked.right || wall.body.touching.right)) {
+            platform.body.velocity.x = 70;
+        }
+        else if ((platform.body.blocked.right || platform.body.touching.right) && (wall.body.blocked.left || wall.body.touching.left)) {
+            platform.body.velocity.x = -70;
+        }
     }
 
     // Bullets
@@ -213,41 +322,9 @@ export class World11 extends Phaser.Scene {
         }
     }
 
-    // Add Star
-    moveStar(player: Player, star) {
-        const marioSize = player.marioSize;
-        star.setVisible(true)
-        if (this.coinBricksLayer.getTileAtWorldXY(star.x, star.y) != null) {
-            this.collisionLayer.removeTileAtWorldXY(star.x, star.y);
-            star.setSize(42, 36);
-            star.setOffset(0, 0);
-            star.body.y -= 36;
-            star.setVelocityX(100);
-            star.body.allowGravity = true;
-            star.setBounce(1, 1);
-            this.powerupSound.play();
-        } else {
-            if (player.marioSize == 'small') {
-                player.marioSize = 'invincible-small'
-            } else if (player.marioSize == 'big') {
-                player.marioSize = 'invincible-big'
-            } else if (player.marioSize == 'fire') {
-                player.marioSize = 'invincible-fire'
-            }
-            star.destroy(true);
-            this.time.delayedCall(14000, function getOldSize() {
-                player.marioSize = marioSize;
-            }, [], this);
-            this.gameLogic.points += 1000;
-            this.gameLogic.pointsText.setText('MARIO\n' + this.gameLogic.points);
-            this.powerupSound.play();
-        }
-    }
-
     // Add Mushroom & Fire Flower 
     moveMushroom(player, mushroom) {
         const itemSound = this.itemSound;
-        const lifeMushrooms = this.lifeMushrooms.getGroup();
         const mushrooms = this.mushrooms.getGroup();
         let collisionLayer = this.collisionLayer;
 
@@ -255,7 +332,7 @@ export class World11 extends Phaser.Scene {
             this.collisionLayer.removeTileAtWorldXY(mushroom.x, mushroom.y);
             this.flowers.getGroup().children.iterate(function (child) {
                 if (child.x + child.width / 2 > mushroom.x && child.x - child.width / 2 < mushroom.x && child.y + child.height / 2 > mushroom.y && child.y - child.height / 2 < mushroom.y) {
-                    if (player.marioSize == 'small' || player.marioSize == 'invincible-small' || lifeMushrooms.contains(mushroom)) {
+                    if (player.marioSize == 'small' || player.marioSize == 'invincible-small') {
                         mushroom.setSize(42, 36);
                         mushroom.setOffset(0, 0);
                         mushroom.body.y -= 36;
@@ -312,7 +389,7 @@ export class World11 extends Phaser.Scene {
     // State: 2 - Shell Bullet
     // State: 3 - Flying Turtle Verticaly
     // State: 4 - Flying Turtle
-    turtlesColliderHandler(player, turtle) {
+    turtlesColliderHandler(player: Player, turtle) {
         if ((player.body.touching.down || player.body.blocked.down) && (turtle.body.touching.up || turtle.body.blocked.up)) {
             if (turtle.state == 0) {
                 this.time.delayedCall(6000, this.turtleToStateZero, [turtle, turtle.body.velocity.x, turtle.anims.getCurrentKey], this);
@@ -359,9 +436,9 @@ export class World11 extends Phaser.Scene {
                 player.chooseAnimation("jump");
                 player.setVelocityY(-240);
 
-                if (turtle.anims.getCurrentKey() == "greenFlyingTurtle")
+                if (turtle.anims.getCurrentKey == "greenFlyingTurtle")
                     turtle.play("turtleWalking");
-                else if (turtle.anims.getCurrentKey() == "redFlyingTurtle")
+                else if (turtle.anims.getCurrentKey == "redFlyingTurtle")
                     turtle.play("redTurtleWalking");
 
                 this.gameLogic.points += 500;
@@ -429,7 +506,6 @@ export class World11 extends Phaser.Scene {
     }
 
     turtleToStateZero(turtle, speed, animation) {
-        console.log(animation)
         if (turtle.active && turtle.state == 1) {
             turtle.setSize(36, 52);
             turtle.setOffset(3, 0);
@@ -510,7 +586,7 @@ export class World11 extends Phaser.Scene {
 
             this.warpSound.play();
         }
-        else if (this.player.marioSize == 'invincible-small' || this.player.marioSize == 'invincible-big' || this.player.marioSize == 'invincible-fire') {
+        else if (this.player.marioSize == 'invincible-small') {
             koopa.destroy();
             this.gameLogic.points += 100;
             this.kickSound.play();
@@ -518,10 +594,10 @@ export class World11 extends Phaser.Scene {
         this.gameLogic.pointsText.setText('MARIO\n' + this.gameLogic.points);
     }
 
-    brickCollision() {
-        if (this.player.body.blocked.up || this.player.body.touching.up) {
-            let collisionTile = null;
-            collisionTile = this.collisionLayer.getTileAtWorldXY(this.player.x, this.player.y - 40);
+    brickCollision(player) {
+        if (player.body.blocked.up || player.body.touching.up) {
+            var collisionTile = null;
+            collisionTile = this.collisionLayer.getTileAtWorldXY(player.x, player.y - 40);
             if (collisionTile) {
                 if (this.coinBricksLayer.getTileAtWorldXY(collisionTile.x * 42, collisionTile.y * 36) != null) {
                     if (collisionTile.index == 20) {
@@ -535,7 +611,11 @@ export class World11 extends Phaser.Scene {
                         this.itemSound.play();
                     }
                     else if (collisionTile.index == 415) {
-                        this.collisionLayer.removeTileAtWorldXY(collisionTile.x * 42, collisionTile.y * 36);
+                        this.tenCoinsBrick--;
+                        if (this.tenCoinsBrick == 0) {
+                            this.collisionLayer.removeTileAtWorldXY(collisionTile.x * 42, collisionTile.y * 36);
+                            this.tenCoinsBrick = 10;
+                        }
                         this.gameLogic.coins++;
                         this.gameLogic.points += 200;
                         this.coinSound.play();
@@ -566,6 +646,7 @@ export class World11 extends Phaser.Scene {
 
         this.koopas.update(this.player);
         this.turtles.update(this.player);
+        // this.platformsCycle(this.platforms.getGroup())
     }
 
     // Check Game Status

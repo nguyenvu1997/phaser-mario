@@ -88,7 +88,7 @@ export class GameLogic {
 
         player.setVelocityY(0);
         (player.body as Phaser.Physics.Arcade.Body).allowGravity = true;
-        this.themeSound.stop();
+        // this.themeSound.stop();
 
         this.scene.time.delayedCall(2000, function () {
             this.restartTheScene(player);
@@ -97,20 +97,23 @@ export class GameLogic {
     }
 
     restartTheScene(player: Player) {
+        this.scene['themeSound'].stop();
         this.scene.scene.restart();
         this.scene.input.keyboard.enabled = true;
         (player.body as Phaser.Physics.Arcade.Body).allowGravity = true;
         player.marioSize = 'small';
     }
 
-    goToNextScene(currentScene: Phaser.Scene) {
+    goToNextScene(currentScene: Phaser.Scene, data?: {}) {
         if (currentScene == this.scene.scene.get("world11")) {
             this.scene.scene.stop("world11");
-            this.scene.scene.start("world12");
+            this.scene['themeSound'].stop();
+            this.scene.scene.start("world12", data);
         }
-        else if (currentScene == this.scene.scene.get("world12FlagScene")) {
-            this.scene.scene.stop("world12FlagScene");
-            this.scene.scene.start("world13");
+        else if (currentScene == this.scene.scene.get("world12")) {
+            this.scene.scene.stop("world12");
+            this.scene['themeSound'].stop();
+            this.scene.scene.start("world13", data);
         }
         else if (currentScene == this.scene.scene.get("world13")) {
             this.scene.scene.stop("world13");
@@ -127,7 +130,7 @@ export class GameLogic {
 
     }
 
-    levelEndingAnimations(doorX) {
+    levelEndingAnimations(doorX, data?: {}) {
         this.scene.input.keyboard.enabled = false;
         this.scene['player'].chooseAnimation("climb");
 
@@ -155,9 +158,8 @@ export class GameLogic {
         }, [], this);
 
         this.scene.time.delayedCall(4500, function () {
-            console.log('4500')
             this.scene['player'].setVisible(false);
-            this.goToNextScene(this.scene);
+            this.goToNextScene(this.scene, data);
         }, null, this);
     }
 

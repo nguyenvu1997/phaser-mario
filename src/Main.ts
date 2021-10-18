@@ -3,9 +3,10 @@
 import { Preloader } from "./Scenes/Preloader.js"
 import { World11 } from "./Scenes/World11.js"
 import { World12 } from "./Scenes/World12.js"
+import { World13 } from "./Scenes/World13.js"
 
 const config = {
-    type: Phaser.AUTO,
+	type: Phaser.AUTO,
 	width: 671,
 	height: 522,
 	physics: {
@@ -15,7 +16,7 @@ const config = {
 			debug: false
 		}
 	},
-	scene: [ Preloader, World11, World12 ],
+	scene: [Preloader, World11, World12, World13],
 }
 
 const game = new Phaser.Game(config)

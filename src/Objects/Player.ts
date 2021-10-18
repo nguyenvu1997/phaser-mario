@@ -246,6 +246,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
                     this.chooseAnimation("jump");
                 }
             }
+        } else {
+            this.cursors.up.isDown = false;
+            this.cursors.left.isDown = false;
+            this.cursors.right.isDown = false;
         }
 
         // Fire
