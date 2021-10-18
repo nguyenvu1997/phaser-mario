@@ -83,7 +83,7 @@ export class World11 extends Phaser.Scene {
 
         // Create Player
         const spawnPoint = this.map.findObject("Player", obj => obj.name === "Spawn position");
-        this.player = new Player(this, spawnPoint.x + 5000, spawnPoint.y - 50, 'mario');
+        this.player = new Player(this, spawnPoint.x, spawnPoint.y - 50, 'mario');
         this.player.setPlayerView();
         // invincible
         this.player.setMarioSize('small');
