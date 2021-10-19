@@ -646,7 +646,6 @@ export class World13 extends Phaser.Scene {
 
         this.koopas.update(this.player);
         this.turtles.update(this.player);
-        // this.platformsCycle(this.platforms.getGroup())
     }
 
     // Check Game Status
