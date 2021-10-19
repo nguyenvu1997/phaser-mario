@@ -134,7 +134,7 @@ export class World13 extends Phaser.Scene {
         }, null, this);
         // Koopas & Objects
         this.physics.add.collider(this.koopas.getGroup(), this.collisionLayer);
-        // this.physics.add.collider(this.koopas.getGroup(), this.koopas.getGroup());
+        this.physics.add.collider(this.koopas.getGroup(), this.koopas.getGroup());
         this.physics.add.collider(this.koopas.getGroup(), this.coinBricksLayer);
         this.physics.add.collider(this.koopas.getGroup(), backgroundLayer);
         // Turtles & Objects

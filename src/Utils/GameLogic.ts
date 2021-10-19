@@ -88,7 +88,7 @@ export class GameLogic {
 
         player.setVelocityY(0);
         (player.body as Phaser.Physics.Arcade.Body).allowGravity = true;
-        // this.themeSound.stop();
+        this.themeSound.stop();
 
         this.scene.time.delayedCall(2000, function () {
             this.restartTheScene(player);
