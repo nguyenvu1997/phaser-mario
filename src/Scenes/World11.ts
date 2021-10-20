@@ -45,11 +45,14 @@ export class World11 extends Phaser.Scene {
     pointsText: Phaser.GameObjects.Text;
     coinsNumber: Phaser.GameObjects.Text;
     timeText: Phaser.GameObjects.Text;
+    live: number;
+    callOneTime: boolean;
 
     constructor() {
         super('world11')
         console.log("world11")
         this.playerCollisions = [];
+        this.live = 2;
     }
 
     preload() {
@@ -68,8 +71,9 @@ export class World11 extends Phaser.Scene {
 
     create() {
         // Infomation
-        this.gameLogic = new GameLogic(this);
         this.input.keyboard.enabled = true;
+        this.callOneTime = true;
+
 
         // Render Map
         this.map = this.make.tilemap({ key: "map1" });
@@ -83,14 +87,15 @@ export class World11 extends Phaser.Scene {
 
         // Create Player
         const spawnPoint = this.map.findObject("Player", obj => obj.name === "Spawn position");
-        this.player = new Player(this, spawnPoint.x, spawnPoint.y - 50, 'mario');
+        this.player = new Player(this, spawnPoint.x + 2500, spawnPoint.y - 50, 'mario');
         this.player.setPlayerView();
-        // invincible
         this.player.setMarioSize('small');
         this.player.chooseAnimation('walk');
-        this.player.setLives(2);
+        this.player.setLives(this.live);
+
         let playerBullets = this.player.getPlayerBullets();
 
+        this.gameLogic = new GameLogic(this);
         this.gameLogic.setInitGame(0, 0);
         this.gameLogic.addText('1-1', 500, this.player.getLives());
 
@@ -109,7 +114,9 @@ export class World11 extends Phaser.Scene {
         this.koopas = new Koopas(this, this.map)
         this.turtles = new Turtles(this, this.map)
 
-        this.themeSound.play();
+        setTimeout(() => {
+            this.themeSound.play();
+        }, 1500);
 
         // Add Collisions
 
@@ -295,7 +302,6 @@ export class World11 extends Phaser.Scene {
             }
             mushroom.destroy(true);
         }
-
     }
 
     fireFlowerHandler(player: Player, flower) {
@@ -570,8 +576,13 @@ export class World11 extends Phaser.Scene {
 
     // Check Game Status
     checkGameStatus(gameStatus: string) {
+
         if (this.player.y > this.game.config.height) {
-            this.gameLogic.playerKilled(this.player);
+            if (this.callOneTime) {
+                this.callOneTime = false
+                this.themeSound.stop();
+                this.gameLogic.playerKilled(this.player);
+            }
         }
 
         if (gameStatus == 'dead') {

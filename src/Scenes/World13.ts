@@ -10,8 +10,6 @@ import { Player } from "../Objects/Player.js";
 import { Turtles } from "../Objects/Turtles.js";
 import { GameLogic } from "../Utils/GameLogic.js";
 
-
-
 export class World13 extends Phaser.Scene {
 
     map: Phaser.Tilemaps.Tilemap;
@@ -51,8 +49,10 @@ export class World13 extends Phaser.Scene {
     timeText: Phaser.GameObjects.Text;
 
     tenCoinsBrick: number;
+    live: number;
 
     dataScene: {};
+    callOneTime: boolean;
 
     constructor() {
         super('world13')
@@ -63,6 +63,7 @@ export class World13 extends Phaser.Scene {
 
     init(data: {}) {
         this.dataScene = data
+        this.live = this.dataScene['lives']
         console.log(data)
     }
 
@@ -82,8 +83,10 @@ export class World13 extends Phaser.Scene {
     }
 
     create() {
-        this.gameLogic = new GameLogic(this);
         this.input.keyboard.enabled = true;
+        this.callOneTime = true;
+
+
 
         // Render Map
         this.map = this.make.tilemap({ key: "map3" });
@@ -108,9 +111,10 @@ export class World13 extends Phaser.Scene {
         this.physics.world.setBoundsCollision(true, true, false, false);
         this.player.setMarioSize(this.dataScene['size']);
         this.player.chooseAnimation('walk');
-        this.player.setLives(this.dataScene['lives']);
+        this.player.setLives(this.live);
         let playerBullets = this.player.getPlayerBullets();
 
+        this.gameLogic = new GameLogic(this);
         this.gameLogic.setInitGame(0, 0);
         this.gameLogic.addText('1-2', 500, this.player.getLives());
 
@@ -188,8 +192,6 @@ export class World13 extends Phaser.Scene {
         this.playerCollisions[8] = this.physics.add.collider(this.player, this.platforms.getGroup(), this.platformsHandler, null, this);
         this.playerCollisions[9] = this.physics.add.overlap(this.player, this.coins.getGroup(), this.coinsHandler, null, this);
 
-
-
         this.physics.add.collider(this.player, this.coinBricksLayer, function () {
             if (this.player.body.blocked.up || this.player.body.touching.up)
                 this.bumpSound.play();
@@ -232,10 +234,9 @@ export class World13 extends Phaser.Scene {
         // Platform & Invisible Walls
         this.physics.add.collider(this.platforms.getGroup(), this.invisibleWalls.getGroup(), this.platformsMovement, null, this);
 
-
         setTimeout(() => {
             this.themeSound.play();
-        }, 2000);
+        }, 1500);
     }
 
     // Invisible Walls
@@ -651,7 +652,11 @@ export class World13 extends Phaser.Scene {
     // Check Game Status
     checkGameStatus(gameStatus: string) {
         if (this.player.y > this.game.config.height) {
-            this.gameLogic.playerKilled(this.player);
+            if (this.callOneTime) {
+                this.callOneTime = false
+                this.themeSound.stop();
+                this.gameLogic.playerKilled(this.player);
+            }
         }
 
         if (gameStatus == 'dead') {

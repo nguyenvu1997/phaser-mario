@@ -12,6 +12,7 @@ export class World11 extends Phaser.Scene {
         super('world11');
         console.log("world11");
         this.playerCollisions = [];
+        this.live = 2;
     }
     preload() {
         this.themeSound = this.sound.add('LEVEL1THEMESONG', { loop: true, volume: 0.5 });
@@ -28,8 +29,8 @@ export class World11 extends Phaser.Scene {
     }
     create() {
         // Infomation
-        this.gameLogic = new GameLogic(this);
         this.input.keyboard.enabled = true;
+        this.callOneTime = true;
         // Render Map
         this.map = this.make.tilemap({ key: "map1" });
         this.tileset = this.map.addTilesetImage("tileset", "tiles");
@@ -41,13 +42,13 @@ export class World11 extends Phaser.Scene {
         this.physics.world.setBoundsCollision(true, true, false, false);
         // Create Player
         const spawnPoint = this.map.findObject("Player", obj => obj.name === "Spawn position");
-        this.player = new Player(this, spawnPoint.x, spawnPoint.y - 50, 'mario');
+        this.player = new Player(this, spawnPoint.x + 2500, spawnPoint.y - 50, 'mario');
         this.player.setPlayerView();
-        // invincible
         this.player.setMarioSize('small');
         this.player.chooseAnimation('walk');
-        this.player.setLives(2);
+        this.player.setLives(this.live);
         let playerBullets = this.player.getPlayerBullets();
+        this.gameLogic = new GameLogic(this);
         this.gameLogic.setInitGame(0, 0);
         this.gameLogic.addText('1-1', 500, this.player.getLives());
         // Set Up Camera
@@ -62,7 +63,9 @@ export class World11 extends Phaser.Scene {
         // Add Koopas
         this.koopas = new Koopas(this, this.map);
         this.turtles = new Turtles(this, this.map);
-        this.themeSound.play();
+        setTimeout(() => {
+            this.themeSound.play();
+        }, 1500);
         // Add Collisions
         // Player & Objects
         this.physics.add.collider(this.player, this.collisionLayer);
@@ -480,7 +483,11 @@ export class World11 extends Phaser.Scene {
     // Check Game Status
     checkGameStatus(gameStatus) {
         if (this.player.y > this.game.config.height) {
-            this.gameLogic.playerKilled(this.player);
+            if (this.callOneTime) {
+                this.callOneTime = false;
+                this.themeSound.stop();
+                this.gameLogic.playerKilled(this.player);
+            }
         }
         if (gameStatus == 'dead') {
             this.player.body.allowGravity = true;

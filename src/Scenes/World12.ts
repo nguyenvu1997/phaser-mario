@@ -11,8 +11,6 @@ import { Stars } from "../Objects/Stars.js";
 import { Turtles } from "../Objects/Turtles.js";
 import { GameLogic } from "../Utils/GameLogic.js";
 
-
-
 export class World12 extends Phaser.Scene {
 
     map: Phaser.Tilemaps.Tilemap;
@@ -51,20 +49,24 @@ export class World12 extends Phaser.Scene {
     pointsText: Phaser.GameObjects.Text;
     coinsNumber: Phaser.GameObjects.Text;
     timeText: Phaser.GameObjects.Text;
+    live: number;
 
     tenCoinsBrick: number;
 
     dataScene: {};
+    callOneTime: boolean;
 
     constructor() {
         super('world12')
         console.log("world12")
         this.playerCollisions = [];
         this.tenCoinsBrick = 0;
+
     }
 
     init(data: {}) {
         this.dataScene = data
+        this.live = this.dataScene['lives']
         console.log(data)
     }
 
@@ -84,8 +86,8 @@ export class World12 extends Phaser.Scene {
 
     create() {
         // Infomation
-        this.gameLogic = new GameLogic(this);
         this.input.keyboard.enabled = true;
+        this.callOneTime = true;
 
         // Render Map
         this.map = this.make.tilemap({ key: "map2" });
@@ -102,12 +104,12 @@ export class World12 extends Phaser.Scene {
         this.player = new Player(this, spawnPoint.x, spawnPoint.y - 50, 'mario');
         this.player.setPlayerView();
         this.physics.world.setBoundsCollision(true, true, false, false);
-        // Invincible
         this.player.setMarioSize(this.dataScene['size']);
         this.player.chooseAnimation('walk');
-        this.player.setLives(this.dataScene['lives']);
+        this.player.setLives(this.live);
         let playerBullets = this.player.getPlayerBullets();
 
+        this.gameLogic = new GameLogic(this);
         this.gameLogic.setInitGame(0, 0);
         this.gameLogic.addText('1-2', 500, this.dataScene['lives']);
 
@@ -136,7 +138,9 @@ export class World12 extends Phaser.Scene {
         // Add Invisible Walls
         this.invisibleWalls = new InvisibleWalls(this, this.map)
 
-        this.themeSound.play();
+        setTimeout(() => {
+            this.themeSound.play();
+        }, 1500);
 
         // Exit Position
         const exit1Position = this.map.findObject("Player", obj => obj.name === "exit1");
@@ -184,7 +188,6 @@ export class World12 extends Phaser.Scene {
         this.physics.add.collider(this.turtles.getGroup(), this.koopas.getGroup(), this.collisionBetweenEnemiesHandler, null, this);
         this.physics.add.collider(this.turtles.getGroup(), backgroundLayer);
         this.physics.add.overlap(this.turtles.getGroup(), this.invisibleWalls.getGroup(), this.invisibleWallsHandler, null, this);
-
 
         // Mushrom & Objects
         this.physics.add.collider(this.mushrooms.getGroup(), this.collisionLayer);
@@ -572,7 +575,6 @@ export class World12 extends Phaser.Scene {
     }
 
     turtleToStateZero(turtle, speed, animation) {
-        console.log(animation)
         if (turtle.active && turtle.state == 1) {
             turtle.setSize(36, 52);
             turtle.setOffset(3, 0);
@@ -616,7 +618,6 @@ export class World12 extends Phaser.Scene {
             this.kickSound.play();
         }
     }
-
 
     brickCollision() {
         if (this.player.body.blocked.up || this.player.body.touching.up) {
@@ -680,7 +681,11 @@ export class World12 extends Phaser.Scene {
     // Check Game Status
     checkGameStatus(gameStatus: string) {
         if (this.player.y > this.game.config.height) {
-            this.gameLogic.playerKilled(this.player);
+            if (this.callOneTime) {
+                this.callOneTime = false
+                this.themeSound.stop();
+                this.gameLogic.playerKilled(this.player);
+            }
         }
 
         if (gameStatus == 'dead') {

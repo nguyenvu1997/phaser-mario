@@ -65,6 +65,8 @@ export class GameLogic {
     }
 
     playerKilled(player: Player) {
+        this.scene['live']--;
+        console.log(player.lives)
         this.scene.input.keyboard.enabled = false;
         (player.body as Phaser.Physics.Arcade.Body).allowGravity = false;
         player.setVelocityX(0);
@@ -93,7 +95,6 @@ export class GameLogic {
         this.scene.time.delayedCall(2000, function () {
             this.restartTheScene(player);
         }, [], this);
-
     }
 
     restartTheScene(player: Player) {

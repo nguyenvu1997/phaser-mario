@@ -38,6 +38,8 @@ export class GameLogic {
         });
     }
     playerKilled(player) {
+        this.scene['live']--;
+        console.log(player.lives);
         this.scene.input.keyboard.enabled = false;
         player.body.allowGravity = false;
         player.setVelocityX(0);

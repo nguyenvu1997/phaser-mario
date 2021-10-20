@@ -17,6 +17,7 @@ export class World13 extends Phaser.Scene {
     }
     init(data) {
         this.dataScene = data;
+        this.live = this.dataScene['lives'];
         console.log(data);
     }
     preload() {
@@ -34,8 +35,8 @@ export class World13 extends Phaser.Scene {
         this.dieSound = this.sound.add('DIE', { volume: 0.5 });
     }
     create() {
-        this.gameLogic = new GameLogic(this);
         this.input.keyboard.enabled = true;
+        this.callOneTime = true;
         // Render Map
         this.map = this.make.tilemap({ key: "map3" });
         this.tileset = this.map.addTilesetImage("tileset", "tiles");
@@ -57,8 +58,9 @@ export class World13 extends Phaser.Scene {
         this.physics.world.setBoundsCollision(true, true, false, false);
         this.player.setMarioSize(this.dataScene['size']);
         this.player.chooseAnimation('walk');
-        this.player.setLives(this.dataScene['lives']);
+        this.player.setLives(this.live);
         let playerBullets = this.player.getPlayerBullets();
+        this.gameLogic = new GameLogic(this);
         this.gameLogic.setInitGame(0, 0);
         this.gameLogic.addText('1-2', 500, this.player.getLives());
         // Get Data From Previos Scene
@@ -159,7 +161,7 @@ export class World13 extends Phaser.Scene {
         this.physics.add.collider(this.platforms.getGroup(), this.invisibleWalls.getGroup(), this.platformsMovement, null, this);
         setTimeout(() => {
             this.themeSound.play();
-        }, 2000);
+        }, 1500);
     }
     // Invisible Walls
     invisibleWallsHandler(turtle) {
@@ -539,7 +541,11 @@ export class World13 extends Phaser.Scene {
     // Check Game Status
     checkGameStatus(gameStatus) {
         if (this.player.y > this.game.config.height) {
-            this.gameLogic.playerKilled(this.player);
+            if (this.callOneTime) {
+                this.callOneTime = false;
+                this.themeSound.stop();
+                this.gameLogic.playerKilled(this.player);
+            }
         }
         if (gameStatus == 'dead') {
             this.player.body.allowGravity = true;

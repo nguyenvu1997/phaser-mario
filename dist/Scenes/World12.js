@@ -18,6 +18,7 @@ export class World12 extends Phaser.Scene {
     }
     init(data) {
         this.dataScene = data;
+        this.live = this.dataScene['lives'];
         console.log(data);
     }
     preload() {
@@ -35,8 +36,8 @@ export class World12 extends Phaser.Scene {
     }
     create() {
         // Infomation
-        this.gameLogic = new GameLogic(this);
         this.input.keyboard.enabled = true;
+        this.callOneTime = true;
         // Render Map
         this.map = this.make.tilemap({ key: "map2" });
         this.tileset = this.map.addTilesetImage("tileset", "tiles");
@@ -51,11 +52,11 @@ export class World12 extends Phaser.Scene {
         this.player = new Player(this, spawnPoint.x, spawnPoint.y - 50, 'mario');
         this.player.setPlayerView();
         this.physics.world.setBoundsCollision(true, true, false, false);
-        // Invincible
         this.player.setMarioSize(this.dataScene['size']);
         this.player.chooseAnimation('walk');
-        this.player.setLives(this.dataScene['lives']);
+        this.player.setLives(this.live);
         let playerBullets = this.player.getPlayerBullets();
+        this.gameLogic = new GameLogic(this);
         this.gameLogic.setInitGame(0, 0);
         this.gameLogic.addText('1-2', 500, this.dataScene['lives']);
         // Get Data From Previos Scene
@@ -78,7 +79,9 @@ export class World12 extends Phaser.Scene {
         this.turtles = new Turtles(this, this.map);
         // Add Invisible Walls
         this.invisibleWalls = new InvisibleWalls(this, this.map);
-        this.themeSound.play();
+        setTimeout(() => {
+            this.themeSound.play();
+        }, 1500);
         // Exit Position
         const exit1Position = this.map.findObject("Player", obj => obj.name === "exit1");
         let exit1 = this.physics.add.sprite(exit1Position.x + 46, exit1Position.y, null);
@@ -470,7 +473,6 @@ export class World12 extends Phaser.Scene {
         this.gameLogic.pointsText.setText('MARIO\n' + this.gameLogic.points);
     }
     turtleToStateZero(turtle, speed, animation) {
-        console.log(animation);
         if (turtle.active && turtle.state == 1) {
             turtle.setSize(36, 52);
             turtle.setOffset(3, 0);
@@ -568,7 +570,11 @@ export class World12 extends Phaser.Scene {
     // Check Game Status
     checkGameStatus(gameStatus) {
         if (this.player.y > this.game.config.height) {
-            this.gameLogic.playerKilled(this.player);
+            if (this.callOneTime) {
+                this.callOneTime = false;
+                this.themeSound.stop();
+                this.gameLogic.playerKilled(this.player);
+            }
         }
         if (gameStatus == 'dead') {
             this.player.body.allowGravity = true;
